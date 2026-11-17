@@ -36,7 +36,7 @@ viewWithTimeTravel rawGame computer model =
 
     helpMessage =
         if model.paused then
-            "Press R to resume travel"
+            "Press R to resume travel. Drag the timeline to travel through time."
         else
             "Press T to time travel"
     in
@@ -51,6 +51,7 @@ viewWithTimeTravel rawGame computer model =
 
 updateWithTimeTravel rawGame computer model =   
     if model.paused && computer.mouse.down then
+    -- user can drag the process to the past moment when it's frozen.
         let
             newPlaybackPosition =
                 min (mousePosToHistoryIndex computer)
@@ -58,9 +59,10 @@ updateWithTimeTravel rawGame computer model =
             replayHistory pastInputs =
                 List.foldl rawGame.updateState rawGame.initialState pastInputs
         in
+        -- Just like mod updating a map in Elixir
         { model
-            | historyPlaybackPosition = newPlaybackPosition
-            , rawModel = replayHistory (List.take newPlaybackPosition model.history)
+            | historyPlaybackPosition = newPlaybackPosition  -- Set the playback position to the selected history index.
+            , rawModel = replayHistory (List.take newPlaybackPosition model.history) -- Take the inputs up to that position and replay them to recreate the game state.
         }
 
     else if keyPressed "T" computer then
@@ -68,11 +70,12 @@ updateWithTimeTravel rawGame computer model =
     else if keyPressed "R" computer then
         {model | paused = False
                 , history = List.take model.historyPlaybackPosition model.history}
+                -- When resuming, keep history up to the selected position and discard the old history.
     else if model.paused then
         model
     else
         { model| 
-        rawModel = rawGame.updateState computer model.rawModel
+        rawModel = rawGame.updateState computer model.rawModel 
         , history = model.history ++ [computer]
         , historyPlaybackPosition = (List.length model.history + 1)
         }
